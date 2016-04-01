@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Hello World!</title>
+  </head>
+  <body>
+      
+      <webview id="webview" src="http://sp.dmm.co.jp/netgame/application/detail/app_id/968828" style="height:1000px;width:370px;float:left;" useragent="Mozilla/5.0 (Linux; U; Android 4.0.2; en-us; Galaxy Nexus Build/ICL53F) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"> </webview>
+      <div style="float:left;margin-left:4px;">
+          <ul style="list-style-type:none">
+              <li>
+                <button id='last'> 上一张 </button> 
+                <button id='next'> 下一张 </button>
+                <input type='text' id='input'/>
+                <button id='access' > 确认 </button>
+                <button id='refresh'> 刷新 </button>
+                <button id='change' > </button>
+              </li>
+              <li>
+                <div id="img" style="width: 460px; height: 345px;position:relative">
+                    <div id = "scen1" style="width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%;"></div>
+                    <div id = "scen2" style="width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%; 0px 0px"></div>
+                    <div id = "scen3" style="width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%;"></div>   
+                </div>
+              </li>
+          </ul>
+      </div>
+  </body>
+  
+  <script>
+      require('electron').ipcRenderer.on('fav',function(event,message){
+         console.log(message); 
+      });
+      var remote = require('electron').remote;
+      var canclick = false;
+      var clickcount = 0;
+      var webview = document.getElementById('webview');
+      var img = document.getElementById('img');
+      var idnow = "";
+      document.getElementById('scen2').style.backgroundPositionY = '0px';
+      var interval = window.setInterval("anime()",50);
+      var scenelist = new Array();
+      var scenindex = 0;
+      document.getElementById('change').addEventListener('click',function(){
+          var id = '0';
+          if(idnow.substring(2,3) == '0'){
+              id = changeStr(idnow,3,3,'2');
+          }
+          else{
+              id = changeStr(idnow,3,3,'0');
+          }
+          document.getElementById('input').value = id.toString();
+          webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_list_detail.php/item_id=" + id.toString());
+      });
+      document.getElementById('img').addEventListener('click',function(event){
+         if(canclick){
+            if(clickcount == 4) clickcount = 0;
+            else clickcount++;
+            if(clickcount <=3 && clickcount >=1){
+                var y = document.getElementById('scen2').style.backgroundPositionY;
+                document.getElementById('scen1').style.visibility = "hidden";
+                document.getElementById('scen3').style.visibility = "hidden";
+                document.getElementById('scen2').style.visibility = "visible";
+                document.getElementById('scen2').style.background = "url(" + scenelist[clickcount] + ")";
+                document.getElementById('scen2').style.backgroundSize = '100%';
+                document.getElementById('scen2').style.backgroundPositionX = '0px';
+                document.getElementById('scen2').style.backgroundPositionY = y;
+            }
+            if(clickcount == 0){
+                document.getElementById('scen2').style.visibility = "hidden";
+                document.getElementById('scen3').style.visibility = "hidden";
+                document.getElementById('scen1').style.visibility = "visible";
+            }
+            if(clickcount == 4){
+                document.getElementById('scen1').style.visibility = "hidden";
+                document.getElementById('scen2').style.visibility = "hidden";
+                document.getElementById('scen3').style.visibility = "visible";
+            }
+         }
+      });
+      document.getElementById('last').addEventListener('click',function(){
+          if(idnow != ""){
+              var id = Number(idnow) - 4;
+              document.getElementById('input').value = id.toString();
+              webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_list_detail.php/item_id=" + id.toString());
+          }
+      });
+      document.getElementById('refresh').addEventListener('click',function(){
+         webview.reload(); 
+      });
+      document.getElementById('next').addEventListener('click',function(){
+          if(idnow != ""){
+              var id = Number(idnow) + 4;
+              document.getElementById('input').value = id.toString();
+              webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_list_detail.php/item_id=" + id.toString());
+          }
+      });
+      document.getElementById('access').addEventListener('click',function(){
+          var input = document.getElementById('input');
+          var id = input.value;
+          if(id != ""){
+              webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_list_detail.php/item_id=" + id);
+          }
+      });
+      webview.addEventListener('did-finish-load',function(){
+          var url = webview.getURL();
+          if(url.indexOf('item_id=') != -1) {
+              idnow = url.slice(-1.-5);
+              var id = changeStr(idnow,3,3,'0');
+              if(idnow.substring(2,3) == '0') document.getElementById('change').innerHTML = 'SR++';
+              else document.getElementById('change').innerHTML = 'SR';
+              var input = document.getElementById('input');
+              input.value = idnow;
+              //清空
+              clear();
+              canclick = false;
+              scenelist = new Array();
+              scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean1.jpg");
+              scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean2_1.jpg");
+              scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean2_2.jpg");
+              scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean2_3.jpg");
+              scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean3.jpg");
+              //读取资源
+              var resourceorder = new Resource(scenelist);
+              resourceorder.on('update',function(e){
+                  document.getElementById('scen1').innerHTML = e.now.toString() + '/' + e.max.toString();
+              });
+              resourceorder.on('error,',function(){
+                  console.log('error');
+              });
+              resourceorder.on('finish',function(){
+                  //资源读取完成
+                  
+                  //弹药装填
+                  SceneInit();
+              })
+              resourceorder.start();
+          }
+          else console.log('no');
+      });
+      //EventTest
+      
+      function changeStr(allstr,start,end,changeStr){ //allstr:原始字符串，start,开始位置,end：结束位  置,str：要改变的字，changeStr:改变后的字
+            return allstr.substring(0,start-1)+changeStr+allstr.substring(end,allstr.length);
+      }
+      function clear(){
+              document.getElementById('scen1').setAttribute('style',"width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%;");
+              document.getElementById('scen2').setAttribute('style',"width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%;");
+              document.getElementById('scen3').setAttribute('style',"width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%;");
+      }
+      function SceneInit(){
+            var div1 = document.getElementById('scen1');
+            div1.style.background = "url(" + scenelist[0] + ")";
+            div1.style.backgroundSize = '100%';
+            div1.style.opacity = 1;
+            div1.style.visibility = "visible"
+            //动画
+            var div2 = document.getElementById('scen2');
+            div2.style.background = "url(" + scenelist[1] + ")";
+            div2.style.backgroundSize = '100%';
+            div2.style.backgroundPositionX = '0px';
+            div2.style.backgroundPositionY = '0px';
+            div2.style.visibility = "hidden"
+            var div3 = document.getElementById('scen3');
+            div3.style.background = "url(" + scenelist[4] + ")";
+            div3.style.backgroundSize = '100%';
+            div3.style.visibility = "hidden"
+            //重新注册鼠标事件
+            clickcount = 0;
+            canclick = true;
+      }
+      function anime(){
+          var div = document.getElementById('scen2');
+          var position = Number(div.style.backgroundPositionY.slice(-999,-2));
+          if(position == -5175) position = 0;
+          else position -=345;
+          div.style.backgroundPositionY = position.toString() + 'px';
+      }
+      function Resource(o){
+          this.orders = o;
+          this.count = 0;
+          EventHelper.call(this);
+          this.start = function(){
+             var self = this;
+             for(var i = 0;i < this.orders.length;i++){
+                (function(){
+                    var image = new Image();
+                    var myurl = self.orders[i];
+                    image.onload = function(){
+                        self.count++;
+                        self.fireEvent('update',{now:self.count,max:self.orders.length,url:myurl});
+                        if(self.count == self.orders.length) self.fireEvent('finish');
+                    };
+                    image.onerror = function(){
+                        self.fireEvent('error',{url:myurl});
+                    }
+                    image.src = self.orders[i];
+                    self.fireEvent('update',{now:0,max:self.orders.length,url:'/'});
+                })();
+            }
+          };
+      }
+      function EventHelper(){
+          this.handlers={};
+          this.on = function(type,handle){
+            this.handlers[type]=handle;
+          };
+          this.fireEvent = function(type,message){
+            if(typeof this.handlers[type]!="undefined"){
+                this.handlers[type](message);
+            }
+          };
+      }
+      </script>
+</html>
