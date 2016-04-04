@@ -68,7 +68,7 @@
          if(canclick){
             if(clickcount == 4) clickcount = 0;
             else clickcount++;
-            if(clickcount <=3 && clickcount >=1){
+            if(clickcount <=3 && clickcount >=1 && scenelist.length > 3){
                 var y = document.getElementById('scen2').style.backgroundPositionY;
                 document.getElementById('scen1').style.visibility = "hidden";
                 document.getElementById('scen3').style.visibility = "hidden";
@@ -83,6 +83,18 @@
                 if(clickcount == 2) fps = 41;
                 if(clickcount == 3) fps = 39;
                 var interval = window.setInterval("anime()",fps);
+            }
+            else{
+                if(clickcount == 1){
+                    document.getElementById('scen1').style.visibility = "hidden";
+                    document.getElementById('scen3').style.visibility = "hidden";
+                    document.getElementById('scen2').style.visibility = "visible";
+                }
+                if(clickcount == 2){
+                    document.getElementById('scen1').style.visibility = "hidden";
+                    document.getElementById('scen2').style.visibility = "hidden";
+                    document.getElementById('scen3').style.visibility = "visible";
+                }
             }
             if(clickcount == 0){
                 document.getElementById('scen2').style.visibility = "hidden";
@@ -147,7 +159,17 @@
                   document.getElementById('scen1').innerHTML = e.now.toString() + '/' + e.max.toString();
               });
               resourceorder.on('error,',function(){
-                  console.log('error');
+                  if(e.url.indexOf('sean2') != -1){
+                      scenelist = new Array();
+                      scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean1.jpg");
+                      scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean2.jpg");
+                      scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean3.jpg");
+                      var getResource = new Resource(scenelist);
+                      getResource.on('finish',function(){
+                          SceneInit(2);
+                      });
+                      getResource.start();
+                  }
               });
               resourceorder.on('finish',function(){
                   //资源读取完成
