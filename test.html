@@ -1,0 +1,56 @@
+<html>
+    <head>
+    </head>
+    <body>
+        <script>
+          function Resource(o){
+          this.orders = o;
+          this.count = 0;
+          EventHelper.call(this);
+          this.start = function(){
+             var self = this;
+             for(var i = 0;i < this.orders.length;i++){
+                (function(){
+                    var image = new Image();
+                    var myurl = self.orders[i];
+                    image.onload = function(){
+                        self.count++;
+                        self.fireEvent('update',{now:self.count,max:self.orders.length,url:myurl});
+                        if(self.count == self.orders.length) self.fireEvent('finish');
+                    };
+                    image.onerror = function(){
+                        self.fireEvent('error',{url:myurl});
+                    }
+                    image.src = self.orders[i];
+                    self.fireEvent('update',{now:0,max:self.orders.length,url:'/'});
+                })();
+            }
+          };
+      }
+      function EventHelper(){
+          this.handlers={};
+          this.on = function(type,handle){
+            this.handlers[type]=handle;
+          };
+          this.fireEvent = function(type,message){
+            if(typeof this.handlers[type]!="undefined"){
+                this.handlers[type](message);
+            }
+          };
+      }
+      var orders = new Array();
+      var s1 = 'https://static-r.kamihimeproject.net/scenarios/dc/46/27b40b24d2302fe133c19431c4ca8290df35e8ff45bc2dc46/0089-';
+      var s2 = '_a_h.jpg?version=1'
+      for(var i = 0;i<=99;i++){
+          for(var j=0;j<=99;j++){
+              orders.push(s1 + i.toString() + '-' + j.toString() + s2);
+          }
+      }
+      var order = new Resource(orders);
+      order.on('update',function(e){
+          document.body.innerHTML = e.url;
+      });
+      order.start();
+      </script>
+    </body>
+</html>

@@ -16,6 +16,9 @@
                 <button id='access' > 确认 </button>
                 <button id='refresh'> 刷新 </button>
                 <button id='change' > </button>
+                <input type='text' id='surach'/>
+                <button id='searchgo'>搜索</button>
+                <button id='goback'>后退</button>
               </li>
               <li>
                 <div id="img" style="width: 460px; height: 345px;position:relative">
@@ -32,6 +35,7 @@
       require('electron').ipcRenderer.on('fav',function(event,message){
          console.log(message); 
       });
+      if(window.localStorage.lastID != null) document.getElementById('input').value = window.localStorage.lastID;
       var remote = require('electron').remote;
       var canclick = false;
       var clickcount = 0;
@@ -39,19 +43,26 @@
       var img = document.getElementById('img');
       var idnow = "";
       document.getElementById('scen2').style.backgroundPositionY = '0px';
-      var interval = window.setInterval("anime()",50);
       var scenelist = new Array();
       var scenindex = 0;
       document.getElementById('change').addEventListener('click',function(){
           var id = '0';
           if(idnow.substring(2,3) == '0'){
-              id = changeStr(idnow,3,3,'2');
+              id = changeStr(idnow,3,3,'2');    
           }
           else{
               id = changeStr(idnow,3,3,'0');
           }
           document.getElementById('input').value = id.toString();
+          window.localStorage.lastID = id.toString();
           webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_list_detail.php/item_id=" + id.toString());
+      });
+      document.getElementById('searchgo').addEventListener('click',function(){
+          var name = document.getElementById('surach').value;
+          webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_id_search.php/rare=5/attr=1/search_words=" + name);
+      });
+      document.getElementById('goback').addEventListener('click',function(){
+          webview.goBack();
       });
       document.getElementById('img').addEventListener('click',function(event){
          if(canclick){
@@ -66,6 +77,12 @@
                 document.getElementById('scen2').style.backgroundSize = '100%';
                 document.getElementById('scen2').style.backgroundPositionX = '0px';
                 document.getElementById('scen2').style.backgroundPositionY = y;
+                window.clearInterval(interval);
+                var fps = 43;
+                if(clickcount == 1) fps = 43;
+                if(clickcount == 2) fps = 41;
+                if(clickcount == 3) fps = 39;
+                var interval = window.setInterval("anime()",fps);
             }
             if(clickcount == 0){
                 document.getElementById('scen2').style.visibility = "hidden";
@@ -83,6 +100,7 @@
           if(idnow != ""){
               var id = Number(idnow) - 4;
               document.getElementById('input').value = id.toString();
+              window.localStorage.lastID = id.toString();
               webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_list_detail.php/item_id=" + id.toString());
           }
       });
@@ -93,6 +111,7 @@
           if(idnow != ""){
               var id = Number(idnow) + 4;
               document.getElementById('input').value = id.toString();
+              window.localStorage.lastID = id.toString();
               webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_list_detail.php/item_id=" + id.toString());
           }
       });
@@ -112,6 +131,7 @@
               else document.getElementById('change').innerHTML = 'SR';
               var input = document.getElementById('input');
               input.value = idnow;
+              window.localStorage.lastID = idnow;
               //清空
               clear();
               canclick = false;
