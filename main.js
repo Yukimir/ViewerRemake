@@ -3,6 +3,7 @@
 const electron = require('electron');
 const ipcMain = electron.ipcMain;
 const fs = require('fs');
+const request = require('request');
 // Module to control application life.
 const app = electron.app;
 // Module to create native browser window.
@@ -17,8 +18,22 @@ if(favjson != "") var fav = JSON.parse(favjson);
 
 
 ipcMain.on('imgrequest',function(event,arg){
-   console.log(arg); 
-   mainWindow.webContents.send('test',arg);
+    if(!fs.existsSync("./image/" + arg[0])){
+        for(var i = 0;i<arg.length;i++){
+            (function(){
+                var t = i;
+                request.get('http://157.7.147.219/img/anime2/sm_99_' + arg[t])
+                .on('response',function(response){
+                    if(response.statusCode != 200) event.sender.send('imgerror',{url:arg[t]});
+                })
+                .on('end',function(){
+                    event.sender.send('imgupdate',{url:arg[t]});
+                })
+                .pipe(fs.createWriteStream('./image/'+arg[t]));
+            })();
+        }
+    }
+    else event.sender.send('imgexist');
 });
 
 function createWindow () {

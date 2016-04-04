@@ -44,6 +44,7 @@
       var img = document.getElementById('img');
       var idnow = "";
       var requestid = 0;
+      var interval = 0;
       document.getElementById('scen2').style.backgroundPositionY = '0px';
       var scenelist = new Array();
       var scenindex = 0;
@@ -75,16 +76,16 @@
                 document.getElementById('scen1').style.visibility = "hidden";
                 document.getElementById('scen3').style.visibility = "hidden";
                 document.getElementById('scen2').style.visibility = "visible";
-                document.getElementById('scen2').style.background = "url(" + scenelist[clickcount] + ")";
+                document.getElementById('scen2').style.background = "url(./image/" + scenelist[clickcount] + ")";
                 document.getElementById('scen2').style.backgroundSize = '100%';
                 document.getElementById('scen2').style.backgroundPositionX = '0px';
                 document.getElementById('scen2').style.backgroundPositionY = y;
                 window.clearInterval(interval);
                 var fps = 43;
                 if(clickcount == 1) fps = 43;
-                if(clickcount == 2) fps = 41;
-                if(clickcount == 3) fps = 39;
-                var interval = window.setInterval("anime()",fps);
+                if(clickcount == 2) fps = 33;
+                if(clickcount == 3) fps = 23;
+                interval = window.setInterval("anime()",fps);
             }
             else{
                 if(clickcount == 1){
@@ -176,7 +177,7 @@
               });
               resourceorder.on('finish',function(){
                   //资源读取完成
-                  
+                  console.log('Finished');
                   //弹药装填
                   SceneInit();
               });
@@ -198,20 +199,20 @@
       }
       function SceneInit(){
             var div1 = document.getElementById('scen1');
-            div1.style.background = "url(" + scenelist[0] + ")";
+            div1.style.background = "url(./image/" + scenelist[0] + ")";
             div1.style.backgroundSize = '100%';
             div1.style.opacity = 1;
             div1.style.visibility = "visible"
             //动画
             var div2 = document.getElementById('scen2');
-            div2.style.background = "url(" + scenelist[1] + ")";
+            div2.style.background = "url(./image/" + scenelist[1] + ")";
             div2.style.backgroundSize = '100%';
             div2.style.backgroundPositionX = '0px';
             div2.style.backgroundPositionY = '0px';
             div2.style.visibility = "hidden"
             var div3 = document.getElementById('scen3');
-            if(scenelist.length <= 3) div3.style.background = "url(" + scenelist[2] + ")";
-            else div3.style.background = "url(" + scenelist[4] + ")";
+            if(scenelist.length <= 3) div3.style.background = "url(./image/" + scenelist[2] + ")";
+            else div3.style.background = "url(./image/" + scenelist[4] + ")";
             div3.style.backgroundSize = '100%';
             div3.style.visibility = "hidden"
             //重新注册鼠标事件
@@ -233,34 +234,33 @@
           this.start = function(){
              var self = this;
              ipcRenderer.removeAllListeners('imgerror');
-             ipcRenderer.removeAllListeners('imgfinish');
              ipcRenderer.removeAllListeners('imgupdate');
              ipcRenderer.on('imageerror',function(e,m){
-                 self.fire('error',{url:m.url});
+                 self.fireEvent('error',{url:m.url});
              });
-             ipcRenderer.on('imgfinish',function(e,m){
-                 self.fire('finish');
-             });
+             ipcRenderer.on('imgexist',function(){
+                 self.fireEvent('finish');
+             })
              ipcRenderer.on('imgupdate',function(e,m){
-                 self.fire('update',m);
+                 self.count++;
+                 self.fireEvent('update',{now:self.count,max:self.orders.length,url:m.url});
+                 if(self.count == self.orders.length) {
+                     self.count = 0;
+                     for(var i = 0;i < self.orders.length;i++){
+                        (function(){
+                            var image = new Image();
+                            var myurl = './images/'+self.orders[i];
+                            image.onload = function(){
+                                self.count++;
+                                if(self.count == self.orders.length) self.fireEvent('finish');
+                            };
+                            image.src = myurl;
+                        })();
+                    }  
+                 }
              })
              ipcRenderer.send('imgrequest',this.orders);
-             /*for(var i = 0;i < this.orders.length;i++){
-                (function(){
-                    var image = new Image();
-                    var myurl = self.orders[i];
-                    image.onload = function(){
-                        self.count++;
-                        self.fireEvent('update',{now:self.count,max:self.orders.length,url:myurl});
-                        if(self.count == self.orders.length) self.fireEvent('finish');
-                    };
-                    image.onerror = function(){
-                        self.fireEvent('error',{url:myurl});
-                    }
-                    image.src = self.orders[i];
-                    self.fireEvent('update',{now:0,max:self.orders.length,url:'/'});
-                })();
-            }*/
+
           };
       }
       function EventHelper(){
