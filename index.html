@@ -32,7 +32,8 @@
   </body>
   
   <script>
-      require('electron').ipcRenderer.on('fav',function(event,message){
+      var ipcRenderer = require('electron').ipcRenderer;
+      ipcRenderer.on('test',function(event,message){
          console.log(message); 
       });
       if(window.localStorage.lastID != null) document.getElementById('input').value = window.localStorage.lastID;
@@ -42,6 +43,7 @@
       var webview = document.getElementById('webview');
       var img = document.getElementById('img');
       var idnow = "";
+      var requestid = 0;
       document.getElementById('scen2').style.backgroundPositionY = '0px';
       var scenelist = new Array();
       var scenindex = 0;
@@ -148,22 +150,23 @@
               clear();
               canclick = false;
               scenelist = new Array();
-              scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean1.jpg");
-              scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean2_1.jpg");
-              scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean2_2.jpg");
-              scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean2_3.jpg");
-              scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean3.jpg");
+              scenelist.push(id +"_sean1.jpg");
+              scenelist.push(id +"_sean2_1.jpg");
+              scenelist.push(id +"_sean2_2.jpg");
+              scenelist.push(id +"_sean2_3.jpg");
+              scenelist.push(id +"_sean3.jpg");
               //读取资源
               var resourceorder = new Resource(scenelist);
               resourceorder.on('update',function(e){
                   document.getElementById('scen1').innerHTML = e.now.toString() + '/' + e.max.toString();
               });
-              resourceorder.on('error,',function(){
+              resourceorder.on('error',function(e){
                   if(e.url.indexOf('sean2') != -1){
                       scenelist = new Array();
-                      scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean1.jpg");
-                      scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean2.jpg");
-                      scenelist.push("http://157.7.147.219/img/anime2/sm_99_" + id +"_sean3.jpg");
+                      //http://157.7.147.219/img/anime2/sm_99_
+                      scenelist.push(id +"_sean1.jpg");
+                      scenelist.push(id +"_sean2.jpg");
+                      scenelist.push(id +"_sean3.jpg");
                       var getResource = new Resource(scenelist);
                       getResource.on('finish',function(){
                           SceneInit(2);
@@ -176,8 +179,10 @@
                   
                   //弹药装填
                   SceneInit();
-              })
+              });
+              resourceorder.id = requestid;
               resourceorder.start();
+              requestid++;
           }
           else console.log('no');
       });
@@ -205,7 +210,8 @@
             div2.style.backgroundPositionY = '0px';
             div2.style.visibility = "hidden"
             var div3 = document.getElementById('scen3');
-            div3.style.background = "url(" + scenelist[4] + ")";
+            if(scenelist.length <= 3) div3.style.background = "url(" + scenelist[2] + ")";
+            else div3.style.background = "url(" + scenelist[4] + ")";
             div3.style.backgroundSize = '100%';
             div3.style.visibility = "hidden"
             //重新注册鼠标事件
@@ -222,10 +228,24 @@
       function Resource(o){
           this.orders = o;
           this.count = 0;
+          this.id = 0;
           EventHelper.call(this);
           this.start = function(){
              var self = this;
-             for(var i = 0;i < this.orders.length;i++){
+             ipcRenderer.removeAllListeners('imgerror');
+             ipcRenderer.removeAllListeners('imgfinish');
+             ipcRenderer.removeAllListeners('imgupdate');
+             ipcRenderer.on('imageerror',function(e,m){
+                 self.fire('error',{url:m.url});
+             });
+             ipcRenderer.on('imgfinish',function(e,m){
+                 self.fire('finish');
+             });
+             ipcRenderer.on('imgupdate',function(e,m){
+                 self.fire('update',m);
+             })
+             ipcRenderer.send('imgrequest',this.orders);
+             /*for(var i = 0;i < this.orders.length;i++){
                 (function(){
                     var image = new Image();
                     var myurl = self.orders[i];
@@ -240,7 +260,7 @@
                     image.src = self.orders[i];
                     self.fireEvent('update',{now:0,max:self.orders.length,url:'/'});
                 })();
-            }
+            }*/
           };
       }
       function EventHelper(){

@@ -1,6 +1,7 @@
 'use strict';
 
 const electron = require('electron');
+const ipcMain = electron.ipcMain;
 const fs = require('fs');
 // Module to control application life.
 const app = electron.app;
@@ -13,6 +14,12 @@ let mainWindow;
 
 var favjson = fs.readFileSync('favourite.txt');
 if(favjson != "") var fav = JSON.parse(favjson);
+
+
+ipcMain.on('imgrequest',function(event,arg){
+   console.log(arg); 
+   mainWindow.webContents.send('test',arg);
+});
 
 function createWindow () {
   // Create the browser window.
