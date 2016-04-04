@@ -239,7 +239,18 @@
                  self.fireEvent('error',{url:m.url});
              });
              ipcRenderer.on('imgexist',function(){
-                 self.fireEvent('finish');
+                     self.count = 0;
+                     for(var i = 0;i < self.orders.length;i++){
+                        (function(){
+                            var image = new Image();
+                            var myurl = './image/'+self.orders[i];
+                            image.onload = function(){
+                                self.count++;
+                                if(self.count == self.orders.length) self.fireEvent('finish');
+                            };
+                            image.src = myurl;
+                        })();
+                    }
              })
              ipcRenderer.on('imgupdate',function(e,m){
                  self.count++;
@@ -249,7 +260,7 @@
                      for(var i = 0;i < self.orders.length;i++){
                         (function(){
                             var image = new Image();
-                            var myurl = './images/'+self.orders[i];
+                            var myurl = './image/'+self.orders[i];
                             image.onload = function(){
                                 self.count++;
                                 if(self.count == self.orders.length) self.fireEvent('finish');
