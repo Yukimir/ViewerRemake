@@ -69,7 +69,7 @@
       });
       document.getElementById('img').addEventListener('click',function(event){
          if(canclick){
-            if(clickcount == 4) clickcount = 0;
+            if(clickcount == scenelist.length-1) clickcount = 0;
             else clickcount++;
             if(clickcount <=3 && clickcount >=1 && scenelist.length > 3){
                 var y = document.getElementById('scen2').style.backgroundPositionY;
@@ -82,9 +82,9 @@
                 document.getElementById('scen2').style.backgroundPositionY = y;
                 window.clearInterval(interval);
                 var fps = 43;
-                if(clickcount == 1) fps = 43;
-                if(clickcount == 2) fps = 33;
-                if(clickcount == 3) fps = 23;
+                if(clickcount == 1) fps = 40;
+                if(clickcount == 2) fps = 35;
+                if(clickcount == 3) fps = 30;
                 interval = window.setInterval("anime()",fps);
             }
             else{
@@ -137,55 +137,55 @@
               webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_list_detail.php/item_id=" + id);
           }
       });
-      webview.addEventListener('did-finish-load',function(){
-          var url = webview.getURL();
-          if(url.indexOf('item_id=') != -1) {
-              idnow = url.slice(-1.-5);
-              var id = changeStr(idnow,3,3,'0');
-              if(idnow.substring(2,3) == '0') document.getElementById('change').innerHTML = 'SR++';
-              else document.getElementById('change').innerHTML = 'SR';
-              var input = document.getElementById('input');
-              input.value = idnow;
-              window.localStorage.lastID = idnow;
-              //清空
-              clear();
-              canclick = false;
-              scenelist = new Array();
-              scenelist.push(id +"_sean1.jpg");
-              scenelist.push(id +"_sean2_1.jpg");
-              scenelist.push(id +"_sean2_2.jpg");
-              scenelist.push(id +"_sean2_3.jpg");
-              scenelist.push(id +"_sean3.jpg");
-              //读取资源
-              var resourceorder = new Resource(scenelist);
-              resourceorder.on('update',function(e){
-                  document.getElementById('scen1').innerHTML = e.now.toString() + '/' + e.max.toString();
-              });
-              resourceorder.on('error',function(e){
-                  if(e.url.indexOf('sean2') != -1){
-                      scenelist = new Array();
-                      //http://157.7.147.219/img/anime2/sm_99_
-                      scenelist.push(id +"_sean1.jpg");
-                      scenelist.push(id +"_sean2.jpg");
-                      scenelist.push(id +"_sean3.jpg");
-                      var getResource = new Resource(scenelist);
-                      getResource.on('finish',function(){
-                          SceneInit(2);
-                      });
-                      getResource.start();
-                  }
-              });
-              resourceorder.on('finish',function(){
-                  //资源读取完成
-                  console.log('Finished');
-                  //弹药装填
-                  SceneInit();
-              });
-              resourceorder.id = requestid;
-              resourceorder.start();
-              requestid++;
-          }
-          else console.log('no');
+      webview.addEventListener('dom-ready',function(){
+            var url = webview.getURL();
+            if(url.indexOf('item_id=') != -1) {
+                idnow = url.slice(-1.-5);
+                var id = changeStr(idnow,3,3,'0');
+                if(idnow.substring(2,3) == '0') document.getElementById('change').innerHTML = 'SR++';
+                else document.getElementById('change').innerHTML = 'SR';
+                var input = document.getElementById('input');
+                input.value = idnow;
+                window.localStorage.lastID = idnow;
+                //清空
+                clear();
+                canclick = false;
+                scenelist = new Array();
+                scenelist.push(id +"_sean1.jpg");
+                scenelist.push(id +"_sean2_1.jpg");
+                scenelist.push(id +"_sean2_2.jpg");
+                scenelist.push(id +"_sean2_3.jpg");
+                scenelist.push(id +"_sean3.jpg");
+                //读取资源
+                var resourceorder = new Resource(scenelist);
+                resourceorder.on('update',function(e){
+                    document.getElementById('scen1').innerHTML = e.now.toString() + '/' + e.max.toString();
+                });
+                resourceorder.on('error',function(e){
+                    if(e.url.indexOf('sean2') != -1){
+                        scenelist = new Array();
+                        //http://157.7.147.219/img/anime2/sm_99_
+                        scenelist.push(id +"_sean1.jpg");
+                        scenelist.push(id +"_sean2.jpg");
+                        scenelist.push(id +"_sean3.jpg");
+                        var getResource = new Resource(scenelist);
+                        getResource.on('finish',function(){
+                            SceneInit(2);
+                        });
+                        getResource.start();
+                    }
+                });
+                resourceorder.on('finish',function(){
+                    //资源读取完成
+                    console.log('Finished');
+                    //弹药装填
+                    SceneInit();
+                });
+                resourceorder.id = requestid;
+                resourceorder.start();
+                requestid++;
+            }
+            else console.log('no');
       });
       //EventTest
       
@@ -235,7 +235,8 @@
              var self = this;
              ipcRenderer.removeAllListeners('imgerror');
              ipcRenderer.removeAllListeners('imgupdate');
-             ipcRenderer.on('imageerror',function(e,m){
+             ipcRenderer.removeAllListeners('imgexist');
+             ipcRenderer.on('imgerror',function(e,m){
                  self.fireEvent('error',{url:m.url});
              });
              ipcRenderer.on('imgexist',function(){
@@ -249,7 +250,7 @@
                      for(var i = 0;i < self.orders.length;i++){
                         (function(){
                             var image = new Image();
-                            var myurl = './images/'+self.orders[i];
+                            var myurl = './image/'+self.orders[i];
                             image.onload = function(){
                                 self.count++;
                                 if(self.count == self.orders.length) self.fireEvent('finish');

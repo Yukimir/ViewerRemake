@@ -19,21 +19,29 @@ if(favjson != "") var fav = JSON.parse(favjson);
 
 ipcMain.on('imgrequest',function(event,arg){
     if(!fs.existsSync("./image/" + arg[0])){
-        for(var i = 0;i<arg.length;i++){
-            (function(){
-                var t = i;
-                request.get('http://157.7.147.219/img/anime2/sm_99_' + arg[t])
-                .on('response',function(response){
-                    if(response.statusCode != 200) event.sender.send('imgerror',{url:arg[t]});
-                })
-                .on('end',function(){
-                    event.sender.send('imgupdate',{url:arg[t]});
-                })
-                .pipe(fs.createWriteStream('./image/'+arg[t]));
-            })();
-        }
+        request.get('http://157.7.147.219/img/anime2/sm_99_' + arg[1]).on('response',function(response){
+           if(response.statusCode == 200){
+                for(var i = 0;i<arg.length;i++){
+                    (function(){
+                        var t = i;
+                        request.get('http://157.7.147.219/img/anime2/sm_99_' + arg[t])
+                        .on('end',function(){
+                            event.sender.send('imgupdate',{url:arg[t]});
+                        })
+                        .pipe(fs.createWriteStream('./image/'+arg[t]));
+                    })();
+                }  
+           }
+           else{
+               event.sender.send('imgerror',{url:arg[1]});
+           } 
+        });
     }
-    else event.sender.send('imgexist');
+    else {
+        if(fs.existsSync("./image/" + arg[1])) event.sender.send('imgexist');
+        else event.sender.send('imgerror',{url:arg[1]});
+        
+    }
 });
 
 function createWindow () {
