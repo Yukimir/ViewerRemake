@@ -5,8 +5,19 @@
     <title>Hello World!</title>
   </head>
   <body>
-      
-      <webview id="webview" src="http://sp.dmm.co.jp/netgame/application/detail/app_id/968828" style="height:1000px;width:370px;float:left;" useragent="Mozilla/5.0 (Linux; U; Android 4.0.2; en-us; Galaxy Nexus Build/ICL53F) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"> </webview>
+      <style type="text/css"> 
+		.zoonbig{
+			height: 675px; 
+			width:900px;
+			position:relative;
+		}
+		.zoonsmall{
+			height: 345px;
+			width:460px;
+			position:relative;
+		}
+	</style> 
+      <webview id="webview" preload="./test.js" src="http://sp.dmm.co.jp/netgame/application/detail/app_id/968828" style="height:1000px;width:370px;float:left;" useragent="Mozilla/5.0 (Linux; U; Android 4.0.2; en-us; Galaxy Nexus Build/ICL53F) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 Mobile Safari/534.30"> </webview>
       <div style="float:left;margin-left:4px;">
           <ul style="list-style-type:none">
               <li>
@@ -19,15 +30,16 @@
                 <input type='text' id='surach'/>
                 <button id='searchgo'>搜索</button>
                 <button id='goback'>后退</button>
-              </li>
-              <li>
-                <div id="img" style="width: 460px; height: 345px;position:relative">
-                    <div id = "scen1" style="width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%;"></div>
-                    <div id = "scen2" style="width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%; 0px 0px"></div>
-                    <div id = "scen3" style="width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%;"></div>   
-                </div>
+				<button id='zoon'>调整尺寸</button>
+				<button id='big'>大图</button>
               </li>
           </ul>
+		  <div id="img" class="zoonsmall">
+               <div id = "scen1" style="height:inherit; width:inherit;position: absolute; top: 0px; opacity: 1; background:none 100%;"></div>
+               <div id = "scen2" style="height:inherit; width:inherit;position: absolute; top: 0px; opacity: 1; background:none 100%; 0px 0px"></div>
+               <div id = "scen3" style="height:inherit; width:inherit;position: absolute; top: 0px; opacity: 1; background:none 100%;"></div>   
+          </div>
+		  <webview id="picview" src = "about:blank" style = "height:800px;width:600px;margin-top:10px"> </webview>
       </div>
   </body>
   
@@ -40,7 +52,20 @@
       var remote = require('electron').remote;
       var canclick = false;
       var clickcount = 0;
+	  var picview = document.getElementById('picview');
       var webview = document.getElementById('webview');
+	  webview.addEventListener('ipc-message', function(event) {
+		switch(event.channel){
+			case 'name':
+				document.getElementById('surach').value = event.args[0];
+				break;
+			case 'pic':
+				picview.loadURL(event.args[0]);
+				break;
+		}
+		console.log(event.args[0]);
+	  });
+	  var zoon = 675;
       var img = document.getElementById('img');
       var idnow = "";
       var requestid = 0;
@@ -62,10 +87,20 @@
       });
       document.getElementById('searchgo').addEventListener('click',function(){
           var name = document.getElementById('surach').value;
-          webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_id_search.php/rare=5/attr=1/search_words=" + name);
+		  if(name == "") webview.send('name');
+          else webview.loadURL("http://157.7.147.219/dispatch_sm.php/god_id_search.php/rare=5/attr=1/search_words=" + name);
       });
       document.getElementById('goback').addEventListener('click',function(){
           webview.goBack();
+      });
+      document.getElementById('big').addEventListener('click',function(){
+          if(picview.style.visibility == "hidden") picview.style.visibility = "visible";
+		  else picview.style.visibility = "hidden";
+	  });
+      document.getElementById('zoon').addEventListener('click',function(){
+		  if(img.getAttribute('class') == "zoonbig") img.setAttribute('class',"zoonsmall");
+		  else img.setAttribute('class',"zoonbig");
+		  document.getElementById('scen2').style.backgroundPositionY = '0px';
       });
       document.getElementById('img').addEventListener('click',function(event){
          if(canclick){
@@ -184,6 +219,7 @@
                 resourceorder.id = requestid;
                 resourceorder.start();
                 requestid++;
+				webview.send('pic');
             }
             else console.log('no');
       });
@@ -193,9 +229,9 @@
             return allstr.substring(0,start-1)+changeStr+allstr.substring(end,allstr.length);
       }
       function clear(){
-              document.getElementById('scen1').setAttribute('style',"width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%;");
-              document.getElementById('scen2').setAttribute('style',"width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%;");
-              document.getElementById('scen3').setAttribute('style',"width: 460px; height: 345px; position: absolute; top: 0px; opacity: 1; background:none 100%;");
+              document.getElementById('scen1').setAttribute('style',"height:inherit;width:inherit;position: absolute; top: 0px; opacity: 1; background:none 100%;");
+              document.getElementById('scen2').setAttribute('style',"height:inherit;width:inherit;position: absolute; top: 0px; opacity: 1; background:none 100%;");
+              document.getElementById('scen3').setAttribute('style',"height:inherit;width:inherit;position: absolute; top: 0px; opacity: 1; background:none 100%;");
       }
       function SceneInit(){
             var div1 = document.getElementById('scen1');
@@ -223,7 +259,7 @@
           var div = document.getElementById('scen2');
           var position = Number(div.style.backgroundPositionY.slice(-999,-2));
           if(position == -5175) position = 0;
-          else position -=345;
+          else position -= img.clientHeight;
           div.style.backgroundPositionY = position.toString() + 'px';
       }
       function Resource(o){
